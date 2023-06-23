@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ApiWithAuth", "ApiWithAuth\ApiWithAuth.csproj", "{D6C2AC6B-A6D6-48B2-A44E-DBFA8A01EB86}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ApiWithAuth", "ApiWithAuth\ApiWithAuth.csproj", "{D6C2AC6B-A6D6-48B2-A44E-DBFA8A01EB86}"
+EndProject
+Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "Database", "Database\Database.sqlproj", "{9582B4E3-FC62-4FD3-B06A-C465BFC8FD38}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,12 @@ Global
 		{D6C2AC6B-A6D6-48B2-A44E-DBFA8A01EB86}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6C2AC6B-A6D6-48B2-A44E-DBFA8A01EB86}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D6C2AC6B-A6D6-48B2-A44E-DBFA8A01EB86}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9582B4E3-FC62-4FD3-B06A-C465BFC8FD38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9582B4E3-FC62-4FD3-B06A-C465BFC8FD38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9582B4E3-FC62-4FD3-B06A-C465BFC8FD38}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{9582B4E3-FC62-4FD3-B06A-C465BFC8FD38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9582B4E3-FC62-4FD3-B06A-C465BFC8FD38}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9582B4E3-FC62-4FD3-B06A-C465BFC8FD38}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

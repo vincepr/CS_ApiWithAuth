@@ -11,8 +11,9 @@ namespace ApiWithAuth.Context
         { }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            
             // BEST PRACTICE wouldbe to move this out to user secrets
-            optionsBuilder.UseNpgsql("Host=localhost;Database=postgres;Username=postgres;Password=mysecretpassword");
+            //optionsBuilder.UseNpgsql("Host=localhost;Database=postgres;Username=postgres;Password=mysecretpassword");
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

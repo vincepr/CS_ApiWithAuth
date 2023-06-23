@@ -1,14 +1,19 @@
 using ApiWithAuth.Context;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// inject our Configuration-Connection String:
+var conn = builder.Configuration.GetConnectionString("ApiWithAuthDbConnStr");
+Console.WriteLine(conn);
 // inject dbcontext to our Services:
-builder.Services.AddDbContext<UsersContext>();
+builder.Services.AddDbContext<UsersContext>(options => options.UseSqlServer(conn));
 
 // specify the auth to use, and inject it to the builder:
 builder.Services
