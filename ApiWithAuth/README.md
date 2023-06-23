@@ -364,3 +364,12 @@ namespace ApiWithAuth.Controllers
     }
 }
 ```
+
+### Use the Token to access the weather forecast Endpoint
+- in `/Programs.cs` we need to change the default line of `builder.Services.AddSwaggerGen()`
+```cs
+// added usings:
+using Microsoft.OpenApi.Models;
+// ...
+
+```
