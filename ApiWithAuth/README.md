@@ -125,13 +125,242 @@ Once finished there should be the following 5 new Tables in the database:
 - `AspNetUserTokens`
 
 ### Register new users
-
-`/Dtos/RegistrationRequestDto.cs`
+- Create a Dto for the Registration Request `/Dtos/RegistrationRequestDto.cs`
 ```cs
+using System.ComponentModel.DataAnnotations;
 
+namespace ApiWithAuth.Dtos
+{
+    public class RegistrationRequest
+    {
+        [Required]
+        public string Email { get; set; } = null!;
+        [Required]
+        public string Username { get; set; } = null!;
+        [Required]
+        public string Password { get; set; } = null!;
+    }
+}
 ```
 
-`/Controllers/AuthController.cs`
+- Add the Controller handling the Endpoint. `/Controllers/AuthController.cs`
 ```cs
+using ApiWithAuth.Dtos;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 
+namespace ApiWithAuth.Controllers
+{
+    [ApiController]
+    [Route("[controller]")]
+    public class AuthController : ControllerBase
+    {
+        private readonly UserManager<IdentityUser> _userManager;
+        public AuthController(UserManager<IdentityUser> userManager)
+        {
+            _userManager = userManager;
+        }
+        [HttpPost]
+        [Route("register")]
+        public async Task<IActionResult> Register(RegistrationRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            var result = await _userManager.CreateAsync(
+                new IdentityUser { UserName = request.Username, Email = request.Email },
+                request.Password
+            );
+            if (result.Succeeded)
+            {
+                request.Password = "";
+                return CreatedAtAction(nameof(Register), new {email = request.Email}, request);
+            }
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(error.Code, error.Description);
+            }
+            return BadRequest(ModelState);
+        }
+    }
+}
+```
+
+Lastly Add Rules on how to IdentifyUsers and define what context to use in `/Programm.cs`
+```cs
+// ...
+// inject our _userManager and 'connect' it with the correct db-context
+builder.Services
+    .AddIdentityCore<IdentityUser>(options =>
+    {
+        options.SignIn.RequireConfirmedAccount = false;
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequireDigit = false;
+        options.Password.RequiredLength = 6;
+        options.Password.RequireNonAlphanumeric = false;
+        options.Password.RequireUppercase = false;
+        options.Password.RequireLowercase = false;
+    })
+    .AddEntityFrameworkStores<UsersContext>();      // specify the context to the db where users information will be handled/stored
+```
+
+### Authentication logging in
+- `/Services/TokenService.cs`
+```cs
+using System.Globalization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+
+namespace ApiWithAuth.Services
+{
+    // Logic Arround how to Create, Validate, Sign JWT Tokens and what Claims are used/checked against
+
+    public class TokenService
+    {
+        private const int ExpirationMinutes = 30;   // how long are JWTs valid (ex. 30min then a new one needs to be requested)
+
+        /// <summary>
+        /// Create a JWT, includes info about user identity and expiration claims for the user.
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public string CreateToken(IdentityUser user)
+        {
+            var expiration = DateTime.UtcNow.AddMinutes(ExpirationMinutes);
+            var token = CreateJwt(
+                    CreateClaims(user),
+                    CreateSigningCredentials(),
+                    expiration
+            );
+            var tokenHandler = new JwtSecurityTokenHandler();
+            return tokenHandler.WriteToken(token);
+        }
+
+        private JwtSecurityToken CreateJwt(List<Claim> claims, SigningCredentials signingCredentials, DateTime expireTime) =>
+            new JwtSecurityToken(
+                    "apiWithAuthBackend",
+                    "apiWithAuthBackend",
+                    claims,
+                    expires: expireTime,
+                    signingCredentials: signingCredentials
+                );
+
+        private List<Claim> CreateClaims( IdentityUser user)
+        {
+            try
+            {
+                var claims = new List<Claim>
+                {
+                    new Claim(JwtRegisteredClaimNames.Sub, "TokenForTheApiWithAuth"),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                    new Claim(JwtRegisteredClaimNames.Iat, DateTime.UtcNow.ToString(CultureInfo.InvariantCulture)),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id),
+                    new Claim(ClaimTypes.Name, user.UserName),
+                    new Claim(ClaimTypes.Email, user.Email),
+                };
+                return claims;
+            } catch ( Exception ex )
+            {
+                Console.WriteLine(ex);
+                throw;
+            }
+        }
+        private SigningCredentials CreateSigningCredentials()
+        {
+            return new SigningCredentials(
+                new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes("12354mySecredUsedToHash5678")
+                ),
+                SecurityAlgorithms.HmacSha256
+            );
+        } 
+    }
+}
+```
+- And Scope our Service into our app: `/Program.cs`
+```cs
+// ...
+// Inject our Custom Service that creates Json-Web-Tokens (JWTs)
+builder.Services.AddScoped<TokenService, TokenService>();
+```
+- Add the 2 Dtos `/Dtos/AuthRequestDto.cs` and `/Dtos/AuthResponseDto.cs`:
+```cs
+namespace ApiWithAuth.Dtos
+{
+    public class AuthRequestDto
+    {
+        public string Email { get; set; } = null!;
+        public string Password { get; set; } = null!;
+    }
+}
+```
+
+```cs
+namespace ApiWithAuth.Dtos
+{
+    public class AuthResponseDto
+    {
+        public string Username { get; set; } = null!;
+        public string Email { get; set; } = null!;
+        public string Token { get; set; } = null!;
+    }
+}
+```
+- Finally we add the login endpoint to our AuthController`/Controllers/AuthController`
+
+```cs
+namespace ApiWithAuth.Controllers
+{
+    [ApiController]
+    [Route("[controller]")]
+    public class AuthController : ControllerBase
+    {
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UsersContext _context;
+        private readonly TokenService _tokenService;
+        public AuthController(UserManager<IdentityUser> userManager, UsersContext ctx, TokenService tokenService)
+        {
+            _context = ctx;
+            _userManager = userManager;     // we need accesss to our _userManager
+            _tokenService = tokenService;   // and our _tokenService from our freshly created Service
+        }
+
+        // ...
+
+        /*
+        *  Existing Users can Login at this Endpoint (they receive the JWT. And then use that JWT to consume the other API endpoints that require Auth)
+        */
+        [HttpPost]
+        [Route("login")]
+        public async Task<ActionResult<AuthResponseDto>> Authenticate([FromBody] AuthRequestDto request)
+        {
+            // Validate against different Fail conditions:
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+            var managedUser = await _userManager.FindByEmailAsync(request.Email);
+            if (managedUser == null)
+                return BadRequest("Bad credentials");
+            var isPasswodValid = await _userManager.CheckPasswordAsync(managedUser, request.Password);
+            if (!isPasswodValid)
+                return BadRequest("Bad credentials");
+            var userInDb = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+            if (userInDb is null || userInDb.UserName is null || userInDb.Email is null)
+                return Unauthorized();
+
+            // everything lines up -> create the actual JWT - Token
+            var accessToken = _tokenService.CreateToken(userInDb);
+            await _context.SaveChangesAsync();      // only if we actually created and are sending the token out, do we log changes into our db.
+            return Ok(new AuthResponseDto
+            {
+                Username = userInDb.UserName,
+                Email = userInDb.Email,
+                Token = accessToken,
+            });
+        }
+    }
+}
 ```
