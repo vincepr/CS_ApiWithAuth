@@ -95,7 +95,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// then use Authorization additionally in our app:
+// we add the Auth to our app. IMPORTANT the order must be this way! Authentication then Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 

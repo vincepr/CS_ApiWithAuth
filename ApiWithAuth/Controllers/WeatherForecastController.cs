@@ -18,7 +18,7 @@ namespace ApiWithAuth.Controllers
             _logger = logger;
         }
 
-        // Added the Authorize here to specify this enpoint as using Authorisation
+        // Added the Authorize here to specify this enpoint as using Authorization
         [HttpGet(Name = "GetWeatherForecast"), Microsoft.AspNetCore.Authorization.Authorize]
         public IEnumerable<WeatherForecast> Get()
         {
