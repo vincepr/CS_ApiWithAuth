@@ -13,10 +13,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 // get our Configuration-Connection String:
-var conn = builder.Configuration.GetConnectionString("ApiWithAuthDbConnStr");
-
+//var conn = builder.Configuration.GetConnectionString("ApiWithAuthDbConnStr");
 // inject dbcontext to our Services:
-builder.Services.AddDbContext<UsersContext>(options => options.UseSqlServer(conn));
+builder.Services.AddDbContext<UsersContext>();
 
 // Inject our Custom Service that creates Json-Web-Tokens (JWTs)
 builder.Services.AddScoped<TokenService, TokenService>();
