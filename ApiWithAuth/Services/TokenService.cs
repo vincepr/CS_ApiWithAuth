@@ -39,7 +39,7 @@ namespace ApiWithAuth.Services
                     signingCredentials: signingCredentials
                 );
 
-        private List<Claim> CreateClaims( IdentityUser user)
+        private List<Claim> CreateClaims(IdentityUser user)
         {
             try
             {
@@ -53,7 +53,8 @@ namespace ApiWithAuth.Services
                     new Claim(ClaimTypes.Email, user.Email),
                 };
                 return claims;
-            } catch ( Exception ex )
+            }
+            catch (Exception ex)
             {
                 Console.WriteLine(ex);
                 throw;
@@ -67,6 +68,6 @@ namespace ApiWithAuth.Services
                 ),
                 SecurityAlgorithms.HmacSha256
             );
-        } 
+        }
     }
 }

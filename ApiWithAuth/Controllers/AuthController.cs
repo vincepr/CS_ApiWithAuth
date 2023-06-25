@@ -38,7 +38,7 @@ namespace ApiWithAuth.Controllers
             );
             if (result.Succeeded)
             {
-                request.Password = "";
+                request.Password = "";      // only send back a empty blank password
                 return CreatedAtAction(nameof(Register), new {email = request.Email}, request);
             }
             foreach (var error in result.Errors)

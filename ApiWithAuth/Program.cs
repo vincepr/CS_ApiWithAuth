@@ -11,10 +11,21 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
+
+// get our Configuration-Connection String:
+var conn = builder.Configuration.GetConnectionString("ApiWithAuthDbConnStr");
+
+// inject dbcontext to our Services:
+builder.Services.AddDbContext<UsersContext>(options => options.UseSqlServer(conn));
+
+// Inject our Custom Service that creates Json-Web-Tokens (JWTs)
+builder.Services.AddScoped<TokenService, TokenService>();
+
+// set options for used SecurityDefinition and SecurityRequirement
+builder.Services.AddSwaggerGen(option =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Demo Login API", Version = "v1" });
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    option.SwaggerDoc("v1", new OpenApiInfo { Title = "Demo Login API", Version = "v1" });
+    option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
         Description = "Please enter a valid token",
@@ -23,26 +34,21 @@ builder.Services.AddSwaggerGen(options =>
         BearerFormat = "JWT",
         Scheme = "Bearer"
     });
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    option.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
             {
                 Reference = new OpenApiReference
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
+                    Type=ReferenceType.SecurityScheme,
+                    Id="Bearer"
                 }
             },
             new string[]{}
         }
     });
 });
-
-// get our Configuration-Connection String:
-var conn = builder.Configuration.GetConnectionString("ApiWithAuthDbConnStr");
-// inject dbcontext to our Services:
-builder.Services.AddDbContext<UsersContext>(options => options.UseSqlServer(conn));
 
 // specify the auth to use, and inject it to the builder:
 builder.Services
@@ -78,20 +84,21 @@ builder.Services
     })
     .AddEntityFrameworkStores<UsersContext>();      // specify the context to the db where users information will be handled/stored
 
-// Inject our Custom Service that creates Json-Web-Tokens (JWTs)
-builder.Services.AddScoped<TokenService, TokenService>();
-
 var app = builder.Build();
 
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 app.UseHttpsRedirection();
-app.UseAuthorization();
-// use then Authentication in the app:
+
+// then use Authorization additionally in our app:
 app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
+
 app.Run();
